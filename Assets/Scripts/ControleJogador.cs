@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ControleJogador : MonoBehaviour
 {
@@ -21,6 +22,9 @@ public class ControleJogador : MonoBehaviour
 
     // Update is called once per frame
     void Update() {
+
+        transform.Rotate(new Vector3(90,0,0) * Time.deltaTime);
+
         int novaRaia = -1;
 
         // Teclado
@@ -68,4 +72,14 @@ public class ControleJogador : MonoBehaviour
         cenario.transform.Translate(0, 0, velocidadeCenario * Time.deltaTime * -1);
 
     }
+
+    void OnCollisionEnter(Collision col) {
+        if (col.gameObject.CompareTag("Moeda")) {
+            Destroy(col.gameObject);
+        }
+        if (col.gameObject.CompareTag("Obstaculo")) {
+            SceneManager.LoadScene("GameOver", LoadSceneMode.Single);
+        }
+    }
+
 }
