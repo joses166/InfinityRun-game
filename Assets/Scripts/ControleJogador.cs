@@ -13,11 +13,17 @@ public class ControleJogador : MonoBehaviour
     private Vector3 target = new Vector3();
     private Vector2 initialPosition;
 
+    public GameObject chao;
+    public GameObject bloco;
+    public GameObject moeda;
+    private int estagioAtual = 1;
+
     // Start is called before the first frame update
     void Start()
     {
         raiaAtual = 1;
         target = jogador.transform.position;
+        montarCenario();
     }
 
     // Update is called once per frame
@@ -71,6 +77,54 @@ public class ControleJogador : MonoBehaviour
         //move o chao
         cenario.transform.Translate(0, 0, velocidadeCenario * Time.deltaTime * -1);
 
+        // criando o chao
+        float cenarioz = cenario.transform.position.z;
+        float estagio = Mathf.Floor(((cenarioz - 50.0F) / -100.0F)) + 1;
+        if (estagio > estagioAtual) {
+            GameObject chao2 = Instantiate(chao);
+            // O 42 é a posição do cenário
+            float chao2z = ((100 * estagioAtual) + 42) + cenarioz;
+            float chaox = chao.transform.position.x;
+            float chaoy = chao.transform.position.y;
+            chao2.transform.SetParent(cenario.transform);
+            chao2.transform.position = new Vector3(chaox, chaoy, chao2z);
+            estagioAtual++;
+            montarCenario();
+        }
+
+    }
+
+    void montarCenario() {
+        for ( int i = 2; i < 10; i++ ) {
+            // percorre as 3 colunas
+            int[] elemento = new int[3];
+            for ( int j = 0; j < 3; j++ ) {
+                elemento[j] = Random.Range(0, 3);
+                // 0 = nada; 1 = bloco; 2 = moeda
+                if ( elemento[0] == 1 && elemento[1] == 1 && elemento[2] == 1 ) {
+                    // previne que não tenha 3 blocos na mesma linha
+                    elemento[2] = 0;
+                }
+                if ( elemento[j] == 1 ) { instanciarBloco(i, j); }
+                else if ( elemento[j] == 2 ) { instanciarMoeda(i, j); }
+            }
+        }
+    }
+
+    void instanciarBloco(int posicaoz, int posicaox) {
+        GameObject bloco2 = Instantiate(bloco);
+        float posz = ((10*posicaoz)+((estagioAtual-1)*100)) + cenario.transform.position.z;
+        float posx = (posicaox-1)*distanciaRaia;
+        bloco2.transform.SetParent(cenario.transform);
+        bloco2.transform.position = new Vector3(posx,2.0F, posz);
+    }
+
+    void instanciarMoeda(int posicaoz, int posicaox) {
+        GameObject moeda2 = Instantiate(moeda);
+        float posz = ((10*posicaoz)+((estagioAtual-1)*100)) + cenario.transform.position.z;
+        float posx = (posicaox-1)*distanciaRaia;
+        moeda2.transform.SetParent(cenario.transform);
+        moeda2.transform.position = new Vector3(posx,2.0F, posz);
     }
 
     void OnCollisionEnter(Collision col) {
