@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class ControleJogador : MonoBehaviour
 {
@@ -16,11 +17,21 @@ public class ControleJogador : MonoBehaviour
     public GameObject chao;
     public GameObject bloco;
     public GameObject moeda;
+
     private int estagioAtual = 1;
+
+    private AudioSource somMoeda;
+    private AudioSource somExplosao;
+    private bool isGameOver = false;
+
+    public Text txtGameOver;
 
     // Start is called before the first frame update
     void Start()
     {
+        somMoeda = GetComponents<AudioSource>()[0];
+        somExplosao = GetComponents<AudioSource>()[1];
+
         raiaAtual = 1;
         target = jogador.transform.position;
         montarCenario();
@@ -28,6 +39,10 @@ public class ControleJogador : MonoBehaviour
 
     // Update is called once per frame
     void Update() {
+
+        if (isGameOver) {
+            return;
+        }
 
         transform.Rotate(new Vector3(90,0,0) * Time.deltaTime);
 
@@ -124,16 +139,24 @@ public class ControleJogador : MonoBehaviour
         float posz = ((10*posicaoz)+((estagioAtual-1)*100)) + cenario.transform.position.z;
         float posx = (posicaox-1)*distanciaRaia;
         moeda2.transform.SetParent(cenario.transform);
-        moeda2.transform.position = new Vector3(posx,2.0F, posz);
+        moeda2.transform.position = new Vector3(posx,1.0F, posz);
     }
 
-    void OnCollisionEnter(Collision col) {
+    void OnTriggerEnter(Collider col) {
         if (col.gameObject.CompareTag("Moeda")) {
+            somMoeda.Play();
             Destroy(col.gameObject);
         }
         if (col.gameObject.CompareTag("Obstaculo")) {
-            SceneManager.LoadScene("GameOver", LoadSceneMode.Single);
+            txtGameOver.text = "GAME OVER";
+            isGameOver = true;
+            somExplosao.Play();
+            Invoke("Menu", 5);
         }
+    }
+
+    void Menu() {
+        SceneManager.LoadScene("Menu", LoadSceneMode.Single);
     }
 
 }
