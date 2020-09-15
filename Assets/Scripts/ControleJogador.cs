@@ -26,6 +26,12 @@ public class ControleJogador : MonoBehaviour
 
     public Text txtGameOver;
 
+    public Text txtPontos;
+    private int pontos = 0;
+
+    private bool pulando = false;
+    private bool caindo = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +41,8 @@ public class ControleJogador : MonoBehaviour
         raiaAtual = 1;
         target = jogador.transform.position;
         montarCenario();
+
+        txtPontos.text = "Pontos: " + pontos;
     }
 
     // Update is called once per frame
@@ -47,12 +55,16 @@ public class ControleJogador : MonoBehaviour
         transform.Rotate(new Vector3(90,0,0) * Time.deltaTime);
 
         int novaRaia = -1;
+        bool pular = false;
 
         // Teclado
         if (Input.GetKeyDown(KeyCode.RightArrow) && raiaAtual < 2) {
             novaRaia = raiaAtual + 1;
         } else if (Input.GetKeyDown(KeyCode.LeftArrow) && raiaAtual > 0) {
             novaRaia = raiaAtual - 1;
+        }
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            pular = true;
         }
 
         //mouse
@@ -63,6 +75,9 @@ public class ControleJogador : MonoBehaviour
                 novaRaia = raiaAtual + 1;
             } else if (Input.mousePosition.x < initialPosition.x && raiaAtual > 0) {
                 novaRaia = raiaAtual - 1;
+            }
+            if (Input.mousePosition.y > initialPosition.y ) {
+                pular = true;
             }
         }
 
@@ -76,6 +91,9 @@ public class ControleJogador : MonoBehaviour
                 } else if (Input.GetTouch(0).position.x < initialPosition.x && raiaAtual > 0) {
                     novaRaia = raiaAtual - 1;
                 }
+                if (Input.GetTouch(0).position.y > initialPosition.y) {
+                    pular = true;
+                }
             }
         }
 
@@ -86,10 +104,41 @@ public class ControleJogador : MonoBehaviour
             jogador.transform.position.y, jogador.transform.position.z);
             //jogador.transform.position = pos;
         }
-        if (jogador.transform.position.x != target.x) {
-            jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5 * Time.deltaTime);
+        
+        // if (jogador.transform.position.x != target.x) {
+        //     jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5 * Time.deltaTime);
+        // }
+
+        if (pular && caindo == false && pulando == false) {
+            pulando = true;
         }
+        
+        if (pulando) {
+            //1.0 = chão
+            //3.0 = máximo do pulo
+            if (jogador.transform.position.y < 3.0 ) {
+                target.y = 3.5F;
+                jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5*Time.deltaTime);
+            } else {
+                //chegou na altura de 3.0
+                pulando = false;
+            }
+        } else if (pulando==false && jogador.transform.position.y > 1.5) {
+            //caindo (gravidade)
+            target.y = 1.0F;
+            jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5*Time.deltaTime);
+            caindo = true;
+        } else if (jogador.transform.position.x != target.x) {
+            //apenas move horizontalmente
+            jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5*Time.deltaTime);
+            caindo = false;
+        } else {
+            caindo = false;
+        }
+
+
         //move o chao
+        velocidadeCenario += (Time.deltaTime * 0.1f);
         cenario.transform.Translate(0, 0, velocidadeCenario * Time.deltaTime * -1);
 
         // criando o chao
@@ -146,6 +195,8 @@ public class ControleJogador : MonoBehaviour
         if (col.gameObject.CompareTag("Moeda")) {
             somMoeda.Play();
             Destroy(col.gameObject);
+            pontos++;
+            txtPontos.text = "Pontos: " + pontos;
         }
         if (col.gameObject.CompareTag("Obstaculo")) {
             txtGameOver.text = "GAME OVER";
