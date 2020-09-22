@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Moeda
   - Obstaculo
+  - Diamante
+  - Mola
   layers:
   - Default
   - TransparentFX

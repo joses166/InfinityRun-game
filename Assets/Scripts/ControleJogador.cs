@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class ControleJogador : MonoBehaviour
 {
@@ -17,11 +19,15 @@ public class ControleJogador : MonoBehaviour
     public GameObject chao;
     public GameObject bloco;
     public GameObject moeda;
+    public GameObject diamante;
+    public GameObject mola;
 
     private int estagioAtual = 1;
 
     private AudioSource somMoeda;
     private AudioSource somExplosao;
+    private AudioSource somJogo1;
+    private AudioSource somJogo2;
     private bool isGameOver = false;
 
     public Text txtGameOver;
@@ -31,12 +37,17 @@ public class ControleJogador : MonoBehaviour
 
     private bool pulando = false;
     private bool caindo = false;
+    private bool instanciouDiamante = false;
+    private bool tocouDiamante = false;
+    private bool puloAlto = false;
 
     // Start is called before the first frame update
     void Start()
     {
         somMoeda = GetComponents<AudioSource>()[0];
         somExplosao = GetComponents<AudioSource>()[1];
+        somJogo1 = GetComponents<AudioSource>()[2];
+        somJogo2 = GetComponents<AudioSource>()[3];
 
         raiaAtual = 1;
         target = jogador.transform.position;
@@ -123,7 +134,7 @@ public class ControleJogador : MonoBehaviour
                 //chegou na altura de 3.0
                 pulando = false;
             }
-        } else if (pulando==false && jogador.transform.position.y > 1.5) {
+        } else if (pulando==false && jogador.transform.position.y > 1.5 && puloAlto == false) {
             //caindo (gravidade)
             target.y = 1.0F;
             jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5*Time.deltaTime);
@@ -135,7 +146,6 @@ public class ControleJogador : MonoBehaviour
         } else {
             caindo = false;
         }
-
 
         //move o chao
         velocidadeCenario += (Time.deltaTime * 0.1f);
@@ -163,14 +173,19 @@ public class ControleJogador : MonoBehaviour
             // percorre as 3 colunas
             int[] elemento = new int[3];
             for ( int j = 0; j < 3; j++ ) {
-                elemento[j] = Random.Range(0, 3);
+                elemento[j] = Random.Range(0, 5);
                 // 0 = nada; 1 = bloco; 2 = moeda
                 if ( elemento[0] == 1 && elemento[1] == 1 && elemento[2] == 1 ) {
                     // previne que não tenha 3 blocos na mesma linha
                     elemento[2] = 0;
                 }
-                if ( elemento[j] == 1 ) { instanciarBloco(i, j); }
+                if ( tocouDiamante == false && elemento[j] == 1 ) { instanciarBloco(i, j); }
                 else if ( elemento[j] == 2 ) { instanciarMoeda(i, j); }
+                else if ( instanciouDiamante == false && elemento[j] == 3 ) { 
+                    instanciarDiamante(i, j); 
+                    instanciouDiamante = true; 
+                }
+                else if ( elemento[j] == 4 ) { instanciarMola(i, j); }
             }
         }
     }
@@ -191,7 +206,23 @@ public class ControleJogador : MonoBehaviour
         moeda2.transform.position = new Vector3(posx,1.0F, posz);
     }
 
-    void OnTriggerEnter(Collider col) {
+    void instanciarDiamante(int posicaoz, int posicaox) {
+        GameObject diamante2 = Instantiate(diamante);
+        float posz = ((10*posicaoz)+((estagioAtual-1)*100)) + cenario.transform.position.z;
+        float posx = (posicaox-1)*distanciaRaia;
+        diamante2.transform.SetParent(cenario.transform);
+        diamante2.transform.position = new Vector3(posx, 1.0F, posz);
+    }
+
+    void instanciarMola(int posicaoz, int posicaox) {
+        GameObject mola2 = Instantiate(mola);
+        float posz = ((10*posicaoz)+((estagioAtual-1)*100)) + cenario.transform.position.z;
+        float posx = (posicaox-1)*distanciaRaia;
+        mola2.transform.SetParent(cenario.transform);
+        mola2.transform.position = new Vector3(posx, 1.0F, posz);
+    }
+
+    async void OnTriggerEnter(Collider col) {
         if (col.gameObject.CompareTag("Moeda")) {
             somMoeda.Play();
             Destroy(col.gameObject);
@@ -203,6 +234,27 @@ public class ControleJogador : MonoBehaviour
             isGameOver = true;
             somExplosao.Play();
             Invoke("Menu", 5);
+        }
+        if (col.gameObject.CompareTag("Diamante")) {
+            somJogo1.Stop();
+            Destroy(col.gameObject);
+            tocouDiamante = true;
+            somJogo2.Play();
+        }
+        if (col.gameObject.CompareTag("Mola")) {
+            // Pula alto
+            target.y = 5.0F;
+            jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5*Time.deltaTime);
+            puloAlto = true;
+
+            await Task.Delay(1000);
+
+            if ( puloAlto == true ) {
+                // Pula baixo
+                puloAlto = false;
+                target.y = 1.0F;
+                jogador.transform.position = Vector3.Lerp(jogador.transform.position, target, 5*Time.deltaTime);
+            }
         }
     }
 
